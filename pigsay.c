@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 #define BUFFER_LENGTH 256
-#define MAX_LINES 50
+#define MAX_LINES 100
 
 void chomp(char *s)
 {
@@ -13,22 +13,48 @@ void chomp(char *s)
 	}
 }
 
-char *read_input (char *s, size_t length, FILE *f)
+char **read_input (char *s[][], size_t length, FILE *f)
 {
-	char *p = fgets(s, length, f);
-	chomp(s);
-	return p;
+	char **temp_s;
+	char buffer[length];
+	char *line;
+	int i;
+
+	temp_s = (char **) malloc(sizeof(char *) * MAX_LINES);
+	if (temp_s == NULL) {
+		fprintf(stderr, "Error allocating memory in read_input\n");
+		exit(1);
+	}
+	
+	for (i = 0; fgets(buffer, length, f) && i < MAX_LINES; i++) {
+		line = (char *) malloc(sizeof(char) * (strlen(buffer) + 1));
+		if (line == NULL) {
+			fprintf(stderr, "Error allocating memory in read_inpput\n");
+			exit(1);
+		}
+		strncpy(line, buffer, strlen(buffer) + 1);
+		chomp(line);
+		temp_s[i] = line;
+	}
+
+	temp_s[i] = NULL;
+
+	if (feof(f)) {
+		*s = temp_s;
+	} else {
+		/* an error occured */
+		fprintf(stderr, "Error reading input\n");
+		exit(1);
+	}
+	
+	return temp_s;
 }
 
-char *prompt (char *s)
+void prompt (char *s[][])
 {
-	char *p;
-
 	printf("Enter your input: ");
 	fflush(stdout);
-	p = read_input(s, BUFFER_LENGTH, stdin);
-	
-	return p;
+	read_input(s, BUFFER_LENGTH, stdin);
 }
 
 void draw_cat ()
@@ -73,22 +99,26 @@ int get_pig (char *filename, char **pig[])
 
 	fclose(f);
 
-	return i;
+	return 0;
 }
 
-int print_pig (char *text, char ***pig, int lines)
+int print_pig (char ***text, char ***pig)
 {
-	int num_printed = 0;
+	int num_printed;
 	int i;
 
 	if (text == NULL || pig == NULL) {
 		return -1;
 	}
 
-	printf("%s\n", text);
-	num_printed += strlen(text) + 1;
+	num_printed = 0;
 
-	for (i = 0; i < lines; i++) {
+	for (i = 0; (*text)[i] != NULL; i++) {
+		printf("%s\n", (*text)[i]);
+		num_printed += strlen((*text)[i]) + 1;
+	}
+
+	for (i = 0; (*pig)[i] != NULL; i++) {
 		printf("%s\n", (*pig)[i]);
 		num_printed += strlen((*pig)[i] + 1);
 	}
@@ -98,24 +128,19 @@ int print_pig (char *text, char ***pig, int lines)
 
 int main (int argc, char *argv[])
 {
-	char buffer[BUFFER_LENGTH];
-	char *text;
+	char text[MAX_LINES][BUFFER_LENGTH];
 	char **pig;
-	int lines;
-	int test;
 
-	text = prompt(buffer);
+	prompt(&text);
 
 	/* draw_cat(); */
 
-	lines = get_pig("default.pig", &pig);
-	if (lines == -1) {
+	if (get_pig("default.pig", &pig) < 0) {
 		fprintf(stderr, "%s: Could not find %s\n", argv[0], "default.pig");
 		exit(1);
 	}
 	
-	test = print_pig(text, &pig, lines);
-	if (test < 0) {
+	if (print_pig(&text, &pig) < 0) {
 		fprintf(stderr, "%s: Output failed\n", argv[0]);
 	}
 
