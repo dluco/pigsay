@@ -13,7 +13,7 @@ void chomp(char *s)
 	}
 }
 
-char **read_input (char *s[][], size_t length, FILE *f)
+char **read_input (char ***s, size_t length, FILE *f)
 {
 	char **temp_s;
 	char buffer[length];
@@ -50,7 +50,7 @@ char **read_input (char *s[][], size_t length, FILE *f)
 	return temp_s;
 }
 
-void prompt (char *s[][])
+void prompt (char ***s)
 {
 	printf("Enter your input: ");
 	fflush(stdout);
@@ -128,7 +128,7 @@ int print_pig (char ***text, char ***pig)
 
 int main (int argc, char *argv[])
 {
-	char text[MAX_LINES][BUFFER_LENGTH];
+	char **text;
 	char **pig;
 
 	prompt(&text);
